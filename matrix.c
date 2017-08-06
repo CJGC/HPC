@@ -38,6 +38,7 @@ void getData(float *M,FILE *f){
     data = newData;
     dataSize++;
   }
+  free(data);
 }
 
 void hardrive(float *M,int Mr,int Mc){
