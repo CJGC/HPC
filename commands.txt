@@ -1,2 +1,0 @@
-ssh -l  'username' lovelace.utp.edu.co
-ssh node01
