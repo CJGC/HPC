@@ -1,6 +1,5 @@
-HPC homework 1
+HPC (High Perfomance Computing)
 
-This homework will multiply two matrices of N * M from two files,
-and will produce a result that will be stored in a new file.
+This repository will contain all projects belonging to HPC course
 
-Christhian Julián Gómez Castaño.
+Student name: Christhian Julián Gómez Castaño.
