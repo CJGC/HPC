@@ -1,20 +1,17 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define rows 4 
-#define columns 4
+#include <time.h>
+#define rows 500
+#define columns 500
 
 void fillMatrix(float *M){
 	/* This function will fill Matrix M with some data */
-	int i,j;
-	for(i=0;i<rows;i++){
-		for(j=0;j<columns;j++){
-			M[i*columns+j] = i*1.0;
-			printf("%.1f ",M[i*columns+j]);
-		}
-		printf("\n");
-	}
-	printf("\n");
+	int i,j,chunk=20;
+	#pragma omp parallel private(i,j) shared(M,chunk)
+	#pragma omp for schedule(dynamic,chunk)
+	for(i=0;i<rows;i++)
+		for(j=0;j<columns;j++) M[i*columns+j] = i*1.0;
 }
 
 void hardrive(float *M){
@@ -33,7 +30,7 @@ void hardrive(float *M){
 void mulMatrices(float *M1,float *M2){
   /* This function will multiply two matrices (M1,M2) */
 
-  int M3index=0, i=0, j=0, k=0, chunk=10;
+  int M3index=0, i=0, j=0, k=0, chunk=20;
   float M3[rows*columns]; /* M3 -> Matrix3 will contain the result */
 	#pragma omp parallel private(i,j,k,M3index) shared(M3,chunk)
 		#pragma omp for schedule(dynamic,chunk)
@@ -47,14 +44,19 @@ void mulMatrices(float *M1,float *M2){
 }
 
 int main(int argc, char const *argv[]) {
-
 	/* variables declaration and initialization */ 
+	clock_t start,end;
+	double cpu_time_used;
+	start = clock();
+
   float M1[rows*columns], M2[rows*columns];
 	fillMatrix(M1);
 	fillMatrix(M2);
 
   /* multiplying matrices */
   mulMatrices(M1,M2);
-
-  return 0;
+	end = clock();
+	cpu_time_used = ((double) (end-start))/CLOCKS_PER_SEC;
+  printf("time used = %.3f seconds",cpu_time_used);
+	return 0;
 }
