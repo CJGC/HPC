@@ -12,8 +12,8 @@ FILE * openFile(char const *fileName,FILE *f){
 
 float * buildMatrix(FILE *f,size_t &rows,size_t &columns){
   /* This function will build a matrix M */
-  fscanf(f,"%d",&rows);
-  fscanf(f,"%d",&columns);
+  fscanf(f,"%zu",&rows);
+  fscanf(f,"%zu",&columns);
   fgetc(f); /* skipping nasty character */
   float *M = (float *)malloc(rows*columns*sizeof(float));
   return M;
@@ -66,17 +66,25 @@ void mulMatrices(float *M1,size_t M1r,size_t M1c,float *M2,size_t M2r,size_t M2c
      columns, M2r -> Matrix2 rows, M2c -> Matrix2 columns
   */
   if(M1c != M2r){printf("Matrices cannot be multiply!"); return;}
-  size_t M3size = M1r*M2c, M3index=0,i=0,j=0,k=0 chunk=CHUNK;
+  size_t M3size = M1r*M2c, M3index=0,i=0,j=0,k=0, chunk=CHUNK;
+	int tid = 0, noThreads = 0;
   float M3[M3size]; /* M3 -> Matrix3 will contain the result */
-  #pragma omp parallel private(i,j,k,M3index) shared(M3,chunk){
-    #pragma omp for schedule(dynamic,chunk)
+  #pragma omp parallel private(i,j,k,M3index,tid,noThreads) shared(M3,chunk) num_threads(50)
+	{
+		tid = omp_get_thread_num();
+		if(tid == 0){
+			noThreads = omp_get_num_threads();
+			printf("Thread master! with id %d\n",tid);
+			printf("Invoked threads number %d",noThreads);
+		}
+		#pragma omp for schedule(dynamic,chunk)
     for(i=0; i<M1r; i++)
       for(j=0; j<M2c; j++,M3index++){
         float data = 0.0;
         for(k=0; k<M1c; k++) data = M1[i*M1c+k] * M2[k*M2c+j] + data;
         M3[M3index] = data;
       }
-  }
+	}
   hardrive(M3,M1r,M2c);
 }
 
