@@ -1,7 +1,8 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define CHUNK 20
+#include <time.h>
+#define CHUNK 10 
 
 FILE * openFile(char const *fileName,FILE *f){
   /* This function will try to open a file */
@@ -69,7 +70,7 @@ void mulMatrices(float *M1,size_t M1r,size_t M1c,float *M2,size_t M2r,size_t M2c
   size_t M3size = M1r*M2c, M3index=0,i=0,j=0,k=0, chunk=CHUNK;
 	int tid = 0, noThreads = 0;
   float M3[M3size]; /* M3 -> Matrix3 will contain the result */
-  #pragma omp parallel private(i,j,k,M3index,tid,noThreads) shared(M3,chunk) num_threads(50)
+  #pragma omp parallel private(i,j,k,M3index,tid,noThreads) shared(M3,chunk) num_threads(20)
 	{
 		tid = omp_get_thread_num();
 		if(tid == 0){
@@ -82,7 +83,7 @@ void mulMatrices(float *M1,size_t M1r,size_t M1c,float *M2,size_t M2r,size_t M2c
       for(j=0; j<M2c; j++,M3index++){
         float data = 0.0;
         for(k=0; k<M1c; k++) data = M1[i*M1c+k] * M2[k*M2c+j] + data;
-        M3[M3index] = data;
+	M3[M3index] = data;
       }
 	}
   hardrive(M3,M1r,M2c);
@@ -106,8 +107,11 @@ int main(int argc, char const *argv[]) {
   getData(M1,f1);
   getData(M2,f2);
 
+  clock_t begin = clock();
   /* multiplying matrices */
   mulMatrices(M1,M1r,M1c,M2,M2r,M2c);
+  clock_t end = clock();
+  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 
   /* freeing memory */
   free(M1);
@@ -116,5 +120,6 @@ int main(int argc, char const *argv[]) {
   /* closing files */
   fclose(f1);
   fclose(f2);
+  printf("/nTime = %f\n",time_spent);
   return 0;
 }
