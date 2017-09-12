@@ -17,8 +17,8 @@ void generate(FILE *p,size_t rows,size_t columns){
 }
 
 int main(int argc, char const *argv[]) {
-  if(argc != 3){printf("Error, valid format is <%s> <number> <number>",argv[0]), exit(1);}
-  FILE *p=fopen("m.txt","w+");
+  if(argc != 4){printf("Error, valid format is <%s> <number> <number> <output>",argv[0]), exit(1);}
+  FILE *p=fopen(argv[3],"w+");
   size_t rows,columns;
   sscanf(argv[1],"%zu",&rows); sscanf(argv[2],"%zu",&columns);
   generate(p,rows,columns);
