@@ -3,17 +3,17 @@
 #include <math.h>
 
 // CUDA kernel. Each thread takes care of one element of c
-__global__ void matricesMul(double *a, double *b, double *c, int n)
+__global__ void matricesMul(double *m1, double *m2, double *m3, int n)
 {
     // Get our global thread ID
-    int tx = blockIdx.x*blockDim.x+threadIdx.x;
-    int ty = blockIdx.y*blockDim.y+threadIdx.y;
+    int ti = blockIdx.y*blockDim.y+threadIdx.y;
+    int tj = blockIdx.x*blockDim.x+threadIdx.x;
+    double data=0.0;
 
     // Make sure we do not go out of bounds
-    if(tx < n && ty < n){
-      double data=0.0;
-      for(int k=0;k<n;k++) data += a[tx*n+k]*b[k*n+ty];
-      c[tx*n+ty] = data;
+    if(ti < n && tj < n){
+      for(int k=0;k<n;k++) data += m1[ti*n+k] * m2[k*n+tj];
+      m3[ti*n+tj] = data;
     }
 }
 
@@ -42,20 +42,14 @@ int main( int argc, char* argv[] ){
     h_m3 = (double*)malloc(bytes);
 
     // Allocate memory for each matrix on GPU
-    // cudaError_t err  = CudaAPI
-    // if(err != cudaSuccess){
-    //   printf("%s in %s at line %d\n", cudaGetErrorString(err),__FILE__,__LINE__);
-    //   exit(EXIT_FAILURE);
-    // }
     cudaMalloc((void **)&d_m1, bytes);
     cudaMalloc((void **)&d_m2, bytes);
     cudaMalloc((void **)&d_m3, bytes);
 
-    int i;
     // Initialize matrices on host
-    for( i = 0; i < n; i++ ) {
-        h_m1[i] = 1.0;//sin(i)*sin(i);
-        h_m2[i] = 1.0;//cos(i)*cos(i);
+    for(int i=0; i<n; i++){
+      h_m1[i] = sin(i)*sin(i);
+      h_m2[i] = cos(i)*cos(i);
     }
 
     // Copy host matrices to device
@@ -64,7 +58,6 @@ int main( int argc, char* argv[] ){
 
     // Number of threads in each thread matrix block
     dim3 dimBlock(32,32,1);
-
     // Number of thread blocks in matrix grid
     dim3 dimGrid(32,32,1);
 
