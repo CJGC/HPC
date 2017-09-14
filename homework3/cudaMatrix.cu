@@ -3,7 +3,7 @@
 #include <math.h>
 
 // CUDA kernel. Each thread takes care of one element of c
-__global__ void vecAdd(double *a, double *b, double *c, int n)
+__global__ void matricesMul(double *a, double *b, double *c, int n)
 {
     // Get our global thread ID
     int tx = blockIdx.x*blockDim.x+threadIdx.x;
@@ -13,87 +13,81 @@ __global__ void vecAdd(double *a, double *b, double *c, int n)
     if(tx < n && ty < n){
       int k=0;
       double data=0.0;
-      for(k;k<n;k++) data += a[ty*n+k]*b[k*n+tx];
-      c[ty*n+tx] = data;
+      for(k;k<n;k++) data += a[tx*n+k]*b[k*n+ty];
+      c[tx*n+ty] = data;
     }
 }
 
-int main( int argc, char* argv[] )
-{
-    // Size of vectors
+int main( int argc, char* argv[] ){
+    // Size of matrices n²
     int n = 100000;
 
-    // Host input vectors
-    double *h_a;
-    double *h_b;
-    //Host output vector
-    double *h_c;
+    // Host input matrices
+    double *h_m1;
+    double *h_m2;
+    //Host output matrix
+    double *h_m3;
 
-    // Device input vectors
-    double *d_a;
-    double *d_b;
-    //Device output vector
-    double *d_c;
+    // Device input matrices
+    double *d_m1;
+    double *d_m2;
+    //Device output matrix
+    double *d_m3;
 
-    // Size, in bytes, of each vector
+    // Size, in bytes, of each matrix
     size_t bytes = n*sizeof(double);
 
-    // Allocate memory for each vector on host
-    h_a = (double*)malloc(bytes);
-    h_b = (double*)malloc(bytes);
-    h_c = (double*)malloc(bytes);
+    // Allocate memory for each matrix on host
+    h_m1 = (double*)malloc(bytes);
+    h_m2 = (double*)malloc(bytes);
+    h_m3 = (double*)malloc(bytes);
 
-    // Allocate memory for each vector on GPU
-    cudaError_t err  = cudaMalloc((void **)&d_a, bytes);
-    if(err != cudaSuccess){
-      printf("%s in %s at line %d\n", cudaGetErrorString(err),__FILE__,__LINE__);
-      exit(EXIT_FAILURE);
-    }
-    cudaMalloc((void **)&d_b, bytes);
-    cudaMalloc((void **)&d_c, bytes);
+    // Allocate memory for each matrix on GPU
+    // cudaError_t err  = CudaAPI
+    // if(err != cudaSuccess){
+    //   printf("%s in %s at line %d\n", cudaGetErrorString(err),__FILE__,__LINE__);
+    //   exit(EXIT_FAILURE);
+    // }
+    cudaMalloc((void **)&d_m1, bytes);
+    cudaMalloc((void **)&d_m2, bytes);
+    cudaMalloc((void **)&d_m3, bytes);
 
     int i;
-    // Initialize vectors on host
+    // Initialize matrices on host
     for( i = 0; i < n; i++ ) {
-        h_a[i] = sin(i)*sin(i);
-        h_b[i] = cos(i)*cos(i);
+        h_m1[i] = sin(i)*sin(i);
+        h_m2[i] = cos(i)*cos(i);
     }
 
-    // Copy host vectors to device
-    cudaMemcpy( d_a, h_a, bytes, cudaMemcpyHostToDevice);
-    cudaMemcpy( d_b, h_b, bytes, cudaMemcpyHostToDevice);
-
-    //int blockSize, gridSize;
+    // Copy host matrices to device
+    cudaMemcpy( d_m1, h_m1, bytes, cudaMemcpyHostToDevice);
+    cudaMemcpy( d_m2, h_m2, bytes, cudaMemcpyHostToDevice);
 
     // Number of threads in each thread matrix block
-    //blockSize = 1024;
     dim3 dimBlock(32,32,1);
 
     // Number of thread blocks in matrix grid
     dim3 dimGrid(32,32,1);
-    //gridSize = (int)ceil((float)n/blockSize);
 
     // Execute the kernel
-    vecAdd<<<dimGrid,dimBlock>>>(d_a, d_b, d_c, n);
+    matricesMul<<<dimGrid,dimBlock>>>(d_m1, d_m2, d_m3, n);
 
-    // Copy array back to host
-    cudaMemcpy( h_c, d_c, bytes, cudaMemcpyDeviceToHost );
+    // Copy result m3 matrix back to host
+    cudaMemcpy(h_m3, d_m3, bytes, cudaMemcpyDeviceToHost);
 
-    // Sum up vector c and print result divided by n, this should equal 1 within error
-    double sum = 0;
-    for(i=0; i<n; i++)
-        sum += h_c[i];
-    printf("final result: %f\n", sum/n);
+    // print every item into m3 matrix
+    int i=0;
+    for(i; i<n; i++) printf("final result: %f\n", h_m3[i]);
 
     // Release device memory
-    cudaFree(d_a);
-    cudaFree(d_b);
-    cudaFree(d_c);
+    cudaFree(d_m1);
+    cudaFree(d_m2);
+    cudaFree(d_m3);
 
     // Release host memory
-    free(h_a);
-    free(h_b);
-    free(h_c);
+    free(h_m1);
+    free(h_m2);
+    free(h_m3);
 
     return 0;
 }
