@@ -11,9 +11,8 @@ __global__ void matricesMul(double *a, double *b, double *c, int n)
 
     // Make sure we do not go out of bounds
     if(tx < n && ty < n){
-      int k=0;
       double data=0.0;
-      for(k;k<n;k++) data += a[tx*n+k]*b[k*n+ty];
+      for(int k=0;k<n;k++) data += a[tx*n+k]*b[k*n+ty];
       c[tx*n+ty] = data;
     }
 }
@@ -55,8 +54,8 @@ int main( int argc, char* argv[] ){
     int i;
     // Initialize matrices on host
     for( i = 0; i < n; i++ ) {
-        h_m1[i] = sin(i)*sin(i);
-        h_m2[i] = cos(i)*cos(i);
+        h_m1[i] = 1.0;//sin(i)*sin(i);
+        h_m2[i] = 1.0;//cos(i)*cos(i);
     }
 
     // Copy host matrices to device
@@ -76,8 +75,10 @@ int main( int argc, char* argv[] ){
     cudaMemcpy(h_m3, d_m3, bytes, cudaMemcpyDeviceToHost);
 
     // print every item into m3 matrix
-    int i=0;
-    for(i; i<n; i++) printf("final result: %f\n", h_m3[i]);
+    for(int i=0; i<n; i++){
+		double val = h_m3[i];
+		printf("final result: %f\n", val);
+	}
 
     // Release device memory
     cudaFree(d_m1);
