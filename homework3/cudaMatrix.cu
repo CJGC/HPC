@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-
 // CUDA kernel. Each thread takes care of one element of c
 __global__ void vecAdd(double *a, double *b, double *c, int n)
 {
@@ -11,11 +10,10 @@ __global__ void vecAdd(double *a, double *b, double *c, int n)
     int ty = blockIdx.y*blockDim.y+threadIdx.y;
 
     // Make sure we do not go out of bounds
-    if (tx < n && ty < n){
-      int k=0; double data=0.0;
-      for(k;k<n;k++){
-        data += a[ty*n+k]*b[k*n+tx];
-      }
+    if(tx < n && ty < n){
+      int k=0;
+      double data=0.0;
+      for(k;k<n;k++) data += a[ty*n+k]*b[k*n+tx];
       c[ty*n+tx] = data;
     }
 }
@@ -46,7 +44,11 @@ int main( int argc, char* argv[] )
     h_c = (double*)malloc(bytes);
 
     // Allocate memory for each vector on GPU
-    cudaMalloc((void **)&d_a, bytes);
+    cudaError_t err  = cudaMalloc((void **)&d_a, bytes);
+    if(err != cudaSuccess){
+      printf("%s in %s at line %d\n", cudaGetErrorString(err),__FILE__,__LINE__);
+      exit(EXIT_FAILURE);
+    }
     cudaMalloc((void **)&d_b, bytes);
     cudaMalloc((void **)&d_c, bytes);
 
