@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#define rows 1000
+#define cols 1000
 
 // CUDA kernel. Each thread takes care of one element of c
 __global__ void matricesMul(double *m1, double *m2, double *m3, int n)
@@ -11,7 +13,8 @@ __global__ void matricesMul(double *m1, double *m2, double *m3, int n)
     double data=0.0;
 
     // Make sure we do not go out of bounds
-    if(ti < n && tj < n){
+    if(ti < rows && tj < cols){
+		int k;
       for(int k=0;k<n;k++) data += m1[ti*n+k] * m2[k*n+tj];
       m3[ti*n+tj] = data;
     }
@@ -19,7 +22,7 @@ __global__ void matricesMul(double *m1, double *m2, double *m3, int n)
 
 int main( int argc, char* argv[] ){
     // Size of matrices n²
-    int n = 100000;
+    int n = rows*cols;
 
     // Host input matrices
     double *h_m1;
