@@ -5,7 +5,7 @@
 #define cols 1000
 
 // CUDA kernel. Each thread takes care of one element of c
-__global__ void matricesMul(double *m1, double *m2, double *m3, int n)
+__global__ void matricesMul(double *m1, double *m2, double *m3)
 {
     // Get our global thread ID
     int ti = blockIdx.y*blockDim.y+threadIdx.y;
@@ -67,7 +67,7 @@ int main( int argc, char* argv[] ){
     dim3 dimGrid(i,j,1);
 
     // Execute the kernel
-    matricesMul<<<dimGrid,dimBlock>>>(d_m1, d_m2, d_m3, n);
+    matricesMul<<<dimGrid,dimBlock>>>(d_m1, d_m2, d_m3);
 
     // Copy result m3 matrix back to host
     cudaMemcpy(h_m3, d_m3, bytes, cudaMemcpyDeviceToHost);
