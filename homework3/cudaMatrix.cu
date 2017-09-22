@@ -10,13 +10,12 @@ __global__ void matricesMul(double *m1, double *m2, double *m3, int n)
     // Get our global thread ID
     int ti = blockIdx.y*blockDim.y+threadIdx.y;
     int tj = blockIdx.x*blockDim.x+threadIdx.x;
-    double data=0.0;
-
     // Make sure we do not go out of bounds
     if(ti < rows && tj < cols){
-		int k;
-      for(int k=0;k<n;k++) data += m1[ti*n+k] * m2[k*n+tj];
-      m3[ti*n+tj] = data;
+			double data= 0.0;
+			int k;
+      for(k=0;k<rows;k++) data += m1[ti*rows+k] * m2[k*cols+tj];
+      m3[ti*rows+tj] = data;
     }
 }
 
@@ -60,9 +59,12 @@ int main( int argc, char* argv[] ){
     cudaMemcpy( d_m2, h_m2, bytes, cudaMemcpyHostToDevice);
 
     // Number of threads in each thread matrix block
-    dim3 dimBlock(32,32,1);
+		double x = sqrt(1024);
+		size_t i = floor(x);
+		size_t j = i;
+    dim3 dimBlock(i,j,1);
     // Number of thread blocks in matrix grid
-    dim3 dimGrid(32,32,1);
+    dim3 dimGrid(i,j,1);
 
     // Execute the kernel
     matricesMul<<<dimGrid,dimBlock>>>(d_m1, d_m2, d_m3, n);
@@ -72,9 +74,9 @@ int main( int argc, char* argv[] ){
 
     // print every item into m3 matrix
     for(int i=0; i<n; i++){
-		double val = h_m3[i];
-		printf("final result: %f\n", val);
-	}
+			double val = h_m3[i];
+			printf("final result: %f\n", val);
+		}
 
     // Release device memory
     cudaFree(d_m1);
