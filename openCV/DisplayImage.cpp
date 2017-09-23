@@ -30,11 +30,11 @@ int main(int argc, char** argv ){
         printf("No image data \n");
         return -1;
     }
-		unsigned int *h_rawImage, *d_rawImage, *h_ProcImage, *d_ProcImage;
+		unsigned char *h_rawImage, *d_rawImage, *h_ProcImage, *d_ProcImage;
 
 		/* Memory management */
 		Size imgSize = image.size();
-		size_t imgHeight, imgWidht;
+		size_t imgHeight, imgWidth;
 		imgHeight = imgSize.height;
 		imgWidth = imgSize.width;
 		size_t _size = imgHeight*imgWidth*image.channels()*sizeof(unsigned char);
