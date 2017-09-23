@@ -65,7 +65,7 @@ int main( int argc, char* argv[] ){
     // Number of thread blocks in matrix grid
 		size_t gridNum = ceil((double)n/1024);  // needed grid numbers to our problem
 		size_t gridR = ceil(sqrt(gridNum)); 		// grid rows	
-		size_t gridC = gridR										// grid cols
+		size_t gridC = gridR;										// grid cols
     dim3 dimGrid(gridR,gridC,1);
 
     // Execute the kernel
