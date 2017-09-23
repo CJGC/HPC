@@ -60,11 +60,14 @@ int main( int argc, char* argv[] ){
 
     // Number of threads in each thread matrix block
 		double x = sqrt(1024);
-		size_t i = floor(x);
-		size_t j = i;
-    dim3 dimBlock(i,j,1);
+		size_t threadsInX= floor(x);
+		size_t threadsInY= threadsInX;
+    dim3 dimBlock(threadsInX,threadsInY,1);
     // Number of thread blocks in matrix grid
-    dim3 dimGrid(i,j,1);
+		size_t gridNum = ceil((double)n/1024);  // needed grid numbers to our problem
+		size_t gridR = ceil(sqrt(gridNum)); 		// grid rows	
+		size_t gridC = gridR										// gird cols
+    dim3 dimGrid(gridR,gridR,1);
 
     // Execute the kernel
     matricesMul<<<dimGrid,dimBlock>>>(d_m1, d_m2, d_m3);
