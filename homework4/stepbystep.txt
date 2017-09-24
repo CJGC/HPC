@@ -1,0 +1,5 @@
+create makeFile with "cmake -DCUDA_USE_STATIC_CUDA_RUNTIME=OFF"
+Then type "make" to build executable.
+
+Cmake tutorial-> https://cmake.org/cmake-tutorial/
+OpenCV documentation -> http://docs.opencv.org/2.4/index.html
