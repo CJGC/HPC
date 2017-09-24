@@ -12,15 +12,15 @@ using namespace cv;
 
 __global__ void matMul(double *image, double *resImage,const size_t& rows,const size_t& cols){
 /* it will multiply each pixel of given image per 2 */
-	int ti = blockIdx.y*blockDim.y+threadIdx.y;
-	int tj = blockIdx.x*blockDim.x+threadIdx.x;
-	if(ti < rows && tj < cols){
-		for(size_t k=0; k<rows; k++){
-			resImage[(ti*rows + tj)*chanDepth + RED] *= 2;
-			resImage[(ti*rows + tj)*chanDepth + GREEN] *= 2;
-			resImage[(ti*rows + tj)*chanDepth + BLUE] *= 2;
-		}	
-	}
+   int ti = blockIdx.y*blockDim.y+threadIdx.y;
+   int tj = blockIdx.x*blockDim.x+threadIdx.x;
+   if(ti < rows && tj < cols){
+      for(size_t k=0; k<rows; k++){
+         resImage[(ti*rows + tj)*chanDepth + RED] *= 2;
+         resImage[(ti*rows + tj)*chanDepth + GREEN] *= 2;
+         resImage[(ti*rows + tj)*chanDepth + BLUE] *= 2;
+      }	
+   }
 }
 
 int main(int argc, char** argv ){
