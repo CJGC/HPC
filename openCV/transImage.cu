@@ -11,7 +11,7 @@
 using namespace cv;
 
 __global__ void matMul(double *image, double *resImage,const size_t& rows,const size_t& cols){
-	/* it will multiply each pixel of given image per 2 */
+/* it will multiply each pixel of given image per 2 */
 	int ti = blockIdx.y*blockDim.y+threadIdx.y;
 	int tj = blockIdx.x*blockDim.x+threadIdx.x;
 	if(ti < rows && tj < cols){
