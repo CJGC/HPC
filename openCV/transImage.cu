@@ -3,6 +3,10 @@
 #include <opencv2/opencv.hpp>
 #include <math.h>
 #include <cuda.h>
+#define RED = 2
+#define GREEN = 1
+#define BLUE = 0
+#define chanDepth = 3
 
 using namespace cv;
 
@@ -12,7 +16,9 @@ __global__ void matMul(double *image, double *resImage,const size_t& rows,const 
 	int tj = blockIdx.x*blockDim.x+threadIdx.x;
 	if(ti < rows && tj < cols){
 		for(size_t k=0; k<rows; k++){
-			resImage[ti*rows + tj] = image[ti*rows + tj]*2;
+			resImage[(ti*rows + tj)*chanDepth + RED] *= 2;
+			resImage[(ti*rows + tj)*chanDepth + GREEN] *= 2;
+			resImage[(ti*rows + tj)*chanDepth + BLUE] *= 2;
 		}	
 	}
 }
@@ -30,36 +36,36 @@ int main(int argc, char** argv ){
         printf("No image data \n");
         return -1;
     }
-		unsigned char *h_rawImage, *d_rawImage, *h_ProcImage, *d_ProcImage;
+		unsigned char *h_rawImage, *d_rawImage, *h_procImage, *d_procImage;
 
 		/* Memory management */
 		Size imgSize = image.size();
 		size_t imgHeight, imgWidth;
 		imgHeight = imgSize.height;
 		imgWidth = imgSize.width;
-		size_t _size = imgHeight*imgWidth*image.channels()*sizeof(unsigned char);
-		h_rawImage = (unsigned char *)malloc(_size);
-		h_ProcImage = (unsigned char *)malloc(_size);
+		size_t reqMem = imgHeight*imgWidth*image.channels()*sizeof(unsigned char);
+		h_rawImage = (unsigned char *)malloc(reqMem);
+		h_procImage = (unsigned char *)malloc(reqMem);
 		h_rawImage = image.data;	
-		cudaMalloc((void**)&d_rawImage,_size);
-		cudaMalloc((void**)&d_ProcImage,_size);	
+		cudaMalloc((void**)&d_rawImage,reqMem);
+		cudaMalloc((void**)&d_procImage,reqMem);	
 		dim3 blockSize(32,32,1);
-		size_t reqBlocks = ceil((double)_size/1024);
+		size_t reqBlocks = ceil((double)reqMem/1024);
 		size_t blocksInX = ceil(sqrt(reqBlocks));
 		size_t blocksInY = blocksInX;
 		dim3 gridSize(blocksInX,blocksInY,1);
 	
 		/* Transfering data to device */
-		cudaMemcpy(d_rawImage,h_rawImage,_size,cudaMemcpyHostToDevice);
+		cudaMemcpy(d_rawImage,h_rawImage,reqMem,cudaMemcpyHostToDevice);
 		/* Operating */	
-		matMul<<<gridSize,blockSize>>>(d_rawImage,d_ProcImage,imgHeight,imgWidth);		
+		matMul<<<gridSize,blockSize>>>(d_rawImage,d_procImage,imgHeight,imgWidth);		
 		/* Recovering data to host */
-		cudaMemcpy(h_ProcImage,d_ProcImage,_size,cudaMemcpyDeviceToHost);
+		cudaMemcpy(h_procImage,d_procImage,reqMem,cudaMemcpyDeviceToHost);
 		
 		/* Saving Image */
 		Mat procImage;
 		procImage.create(imgHeight,imgWidth,CV_8UC3);	
-		procImage.data = h_ProcImage;
+		procImage.data = h_procImage;
 		imwrite("output.jpg",procImage);
     //namedWindow("Display Image", WINDOW_AUTOSIZE );
     //imshow("Display Image", image);
@@ -67,9 +73,9 @@ int main(int argc, char** argv ){
 
 		/* Freeing memory */
 		cudaFree(d_rawImage);
-		cudaFree(d_ProcImage);
+		cudaFree(d_procImage);
 		free(h_rawImage);
-		free(h_ProcImage);
+		free(h_procImage);
     return 0;
 }
 
