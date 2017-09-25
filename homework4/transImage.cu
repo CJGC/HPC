@@ -10,16 +10,15 @@
 
 using namespace cv;
 
-__global__ void matMul(double *image, double *resImage,const size_t& rows,const size_t& cols){
+__global__ void matMul(unsigned char *image,unsigned char *resImage,int rows,int cols){
    /* it will multiply each pixel of given image per 2 */
    int ti = blockIdx.y*blockDim.y+threadIdx.y;
    int tj = blockIdx.x*blockDim.x+threadIdx.x;
    if(ti < rows && tj < cols){
-      for(size_t k=0; k<rows; k++){
-         resImage[(ti*rows + tj)*chanDepth + RED] *= 2;
-         resImage[(ti*rows + tj)*chanDepth + GREEN] *= 2;
-         resImage[(ti*rows + tj)*chanDepth + BLUE] *= 2;
-      }	
+			int pos = (ti*rows + tj)*chanDepth;
+      resImage[pos + RED] = image[pos + RED]*2;
+      resImage[pos + GREEN] = image[pos + GREEN]*2;
+      resImage[pos + BLUE] = image[pos + BLUE]*2;
    }
 }
 
@@ -40,19 +39,19 @@ int main(int argc, char** argv ){
 
    /* Memory management */
    Size imgSize = image.size();
-   size_t imgHeight, imgWidth;
+   int imgHeight, imgWidth;
    imgHeight = imgSize.height;
    imgWidth = imgSize.width;
-   size_t reqMem = imgHeight*imgWidth*image.channels()*sizeof(unsigned char);
+   int reqMem = imgHeight*imgWidth*image.channels()*sizeof(unsigned char);
    h_rawImage = (unsigned char *)malloc(reqMem);
    h_procImage = (unsigned char *)malloc(reqMem);
    h_rawImage = image.data;	
    cudaMalloc((void**)&d_rawImage,reqMem);
    cudaMalloc((void**)&d_procImage,reqMem);	
    dim3 blockSize(32,32,1);
-   size_t reqBlocks = ceil((double)reqMem/1024);
-   size_t blocksInX = ceil(sqrt(reqBlocks));
-   size_t blocksInY = blocksInX;
+   int reqBlocks = ceil((double)reqMem/1024);
+   int blocksInX = ceil(sqrt(reqBlocks));
+   int blocksInY = blocksInX;
    dim3 gridSize(blocksInX,blocksInY,1);
 
    /* Transfering data to device */
