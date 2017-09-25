@@ -15,10 +15,10 @@ __global__ void matMul(unsigned char *image,unsigned char *resImage,int rows,int
    int ti = blockIdx.y*blockDim.y+threadIdx.y;
    int tj = blockIdx.x*blockDim.x+threadIdx.x;
    if(ti < rows && tj < cols){
-			int pos = (ti*rows + tj)*chanDepth;
-      resImage[pos + RED] = image[pos + RED]*2;
-      resImage[pos + GREEN] = image[pos + GREEN]*2;
-      resImage[pos + BLUE] = image[pos + BLUE]*2;
+			int pos = (ti*rows + tj)*3;
+      resImage[pos+0] = image[pos+0]*2;
+      resImage[pos+1] = image[pos+1]*2;
+      resImage[pos+2] = image[pos+2]*2;
    }
 }
 
