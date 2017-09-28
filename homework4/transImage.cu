@@ -16,14 +16,14 @@ __host__ void checkCudaState(cudaError_t& cudaState,const char *message){
 }
 
 __global__ void matMul(unsigned char *image,unsigned char *resImage,int rows,int cols){
-   /* it will multiply each pixel of given image per 2 */
+   /* it will modify each pixel */
    int ti = blockIdx.y*blockDim.y+threadIdx.y;
    int tj = blockIdx.x*blockDim.x+threadIdx.x;
    if(ti < rows && tj < cols){
       int pos = (ti*rows + tj)*chanDepth;
-      resImage[pos+BLUE] = 2;//image[pos+BLUE]*2;
-      resImage[pos+GREEN] = 2;//image[pos+GREEN]*2;
-      resImage[pos+RED] = 2;//image[pos+RED]*2;
+      resImage[pos+BLUE] = image[pos+BLUE]*0;
+      resImage[pos+GREEN] = image[pos+GREEN];
+      resImage[pos+RED] = image[pos+RED];
    }
 }
 
