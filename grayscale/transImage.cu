@@ -17,11 +17,10 @@ __host__ void checkCudaState(cudaError_t& cudaState,const char *message){
 
 __global__ void grayScale(unsigned char *image,unsigned char *resImage,int rows,int cols){
    /* it will turn an image to gray scale image */
-   int ti = blockIdx.y*blockDim.y+threadIdx.y;
    int tj = blockIdx.x*blockDim.x+threadIdx.x;
-   if(ti < cols && tj < cols){
-      int pos = (ti*rows + tj)*chanDepth;
-      resImage[ti*rows + tj] = image[pos+BLUE]*0.07 + image[pos+GREEN]*0.72 + image[pos+RED]*0.21;
+   if(tj < rows*cols){
+      int pos = (tj)*chanDepth;
+      resImage[tj] = image[pos+BLUE]*0.07 + image[pos+GREEN]*0.72 + image[pos+RED]*0.21;
    }
 }
 
@@ -52,11 +51,9 @@ int main(int argc, char** argv ){
    cudaState = cudaMalloc((void**)&d_grayScale,reqMemForGrayScaImg);	
    checkCudaState(cudaState,"Was not possible allocate memory for d_grayScale\n");
    h_rawImage = image.data; 
-   dim3 blockSize(32,32,1);
-   int reqBlocks = ceil((double)reqMemForRawImg/1024);
-   int blocksInX = ceil(sqrt(reqBlocks));
-   int blocksInY = blocksInX;
-   dim3 gridSize(blocksInX,blocksInY,1);
+   dim3 blockSize(1024,1,1);
+   int reqBlocks = ceil((double)imgHeight*imgWidth/1024);
+   dim3 gridSize(reqBlocks,1,1);
  
    /* Transfering data to device */
    cudaState = cudaMemcpy(d_rawImage,h_rawImage,reqMemForRawImg,cudaMemcpyHostToDevice);
