@@ -17,10 +17,10 @@ __host__ void checkCudaState(cudaError_t& cudaState,const char *message){
 
 __global__ void matMul(unsigned char *image,unsigned char *resImage,int rows,int cols){
    /* it will modify each pixel */
-   int ti = blockIdx.y*blockDim.y+threadIdx.y;
+   //int ti = blockIdx.y*blockDim.y+threadIdx.y;
    int tj = blockIdx.x*blockDim.x+threadIdx.x;
-   if(ti < cols && tj < cols){
-      int pos = (ti*rows + tj)*chanDepth;
+   if(tj < rows*cols){
+      int pos = tj*chanDepth;
       resImage[pos+BLUE] = image[pos+BLUE]*2;
       resImage[pos+GREEN] = image[pos+GREEN]*2;
       resImage[pos+RED] = image[pos+RED]*2;
@@ -53,11 +53,9 @@ int main(int argc, char** argv ){
    cudaState = cudaMalloc((void**)&d_procImage,reqMem);	
    checkCudaState(cudaState,"Was not possible allocate memory for d_procImage\n");
    h_rawImage = image.data; 
-   dim3 blockSize(32,32,1);
-   int reqBlocks = ceil((double)reqMem/1024);
-   int blocksInX = ceil(sqrt(reqBlocks));
-   int blocksInY = blocksInX;
-   dim3 gridSize(blocksInX,blocksInY,1);
+   dim3 blockSize(1024,1,1);
+   int reqBlocks = ceil((double)imgHeight*imgWidth/1024);
+   dim3 gridSize(reqBlocks,1,1);
  
    /* Transfering data to device */
    cudaState = cudaMemcpy(d_rawImage,h_rawImage,reqMem,cudaMemcpyHostToDevice);
