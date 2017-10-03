@@ -44,28 +44,28 @@ int main(int argc, char** argv ){
    /* Memory management */
    Size imgSize = image.size();
    int imgHeight = imgSize.height, imgWidth = imgSize.width;
-   int reqMemForRawImage = imgHeight*imgWidth*image.channels()*sizeof(unsigned char);
-   int reqMemForScaleGrayImg = imgHeight*imgWidth*sizeof(unsigned char);
-   h_grayScale = (unsigned char *)malloc(reqMemForScaleGrayImg);
-   cudaState = cudaMalloc((void**)&d_rawImage,reqMemForRawImage);
+   int reqMemForRawImg = imgHeight*imgWidth*image.channels()*sizeof(unsigned char);
+   int reqMemForGrayScaImg = imgHeight*imgWidth*sizeof(unsigned char);
+   h_grayScale = (unsigned char *)malloc(reqMemForGrayScaImg);
+   cudaState = cudaMalloc((void**)&d_rawImage,reqMemForRawImg);
    checkCudaState(cudaState,"Was not possible allocate memory for d_rawImage\n");
-   cudaState = cudaMalloc((void**)&d_grayScale,reqMemForScaleGrayImg);	
+   cudaState = cudaMalloc((void**)&d_grayScale,reqMemForGrayScaImg);	
    checkCudaState(cudaState,"Was not possible allocate memory for d_grayScale\n");
    h_rawImage = image.data; 
    dim3 blockSize(32,32,1);
-   int reqBlocks = ceil((double)reqMemForRawImage/1024);
+   int reqBlocks = ceil((double)reqMemForRawImg/1024);
    int blocksInX = ceil(sqrt(reqBlocks));
    int blocksInY = blocksInX;
    dim3 gridSize(blocksInX,blocksInY,1);
  
    /* Transfering data to device */
-   cudaState = cudaMemcpy(d_rawImage,h_rawImage,reqMemForRawImage,cudaMemcpyHostToDevice);
+   cudaState = cudaMemcpy(d_rawImage,h_rawImage,reqMemForRawImg,cudaMemcpyHostToDevice);
    checkCudaState(cudaState,"Was not possible copy data from h_rawImage to d_rawImage\n");
    /* Operating */	
    grayScale<<<gridSize,blockSize>>>(d_rawImage,d_grayScale,imgHeight,imgWidth);
    cudaDeviceSynchronize();
    /* Recovering data to host */
-   cudaState = cudaMemcpy(h_grayScale,d_grayScale,reqMemForScaleGrayImg,cudaMemcpyDeviceToHost);
+   cudaState = cudaMemcpy(h_grayScale,d_grayScale,reqMemForGrayScaImg,cudaMemcpyDeviceToHost);
    checkCudaState(cudaState,"Was not possible copy data from d_grayScale to h_grayScale\n");
    /* Saving Image */
    Mat procImage;
