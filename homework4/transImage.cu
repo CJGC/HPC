@@ -19,11 +19,11 @@ __global__ void matMul(unsigned char *image,unsigned char *resImage,int rows,int
    /* it will modify each pixel */
    int ti = blockIdx.y*blockDim.y+threadIdx.y;
    int tj = blockIdx.x*blockDim.x+threadIdx.x;
-   if(ti < rows && tj < cols){
+   if(ti < cols && tj < cols){
       int pos = (ti*rows + tj)*chanDepth;
-      resImage[pos+BLUE] = image[pos+BLUE]*0;
-      resImage[pos+GREEN] = image[pos+GREEN];
-      resImage[pos+RED] = image[pos+RED];
+      resImage[pos+BLUE] = image[pos+BLUE]*2;
+      resImage[pos+GREEN] = image[pos+GREEN]*2;
+      resImage[pos+RED] = image[pos+RED]*2;
    }
 }
 
@@ -47,7 +47,6 @@ int main(int argc, char** argv ){
    Size imgSize = image.size();
    int imgHeight = imgSize.height, imgWidth = imgSize.width;
    int reqMem = imgHeight*imgWidth*image.channels()*sizeof(unsigned char);
-   h_rawImage = (unsigned char *)malloc(reqMem);
    h_procImage = (unsigned char *)malloc(reqMem);
    cudaState = cudaMalloc((void**)&d_rawImage,reqMem);
    checkCudaState(cudaState,"Was not possible allocate memory for d_rawImage\n");
