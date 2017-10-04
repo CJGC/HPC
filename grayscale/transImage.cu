@@ -59,7 +59,7 @@ int main(int argc, char** argv ){
    dim3 blockSize(32,32,1);
    int reqBlocksInX = ceil((double)imgHeight/32.0); 
    int reqBlocksInY = ceil((double)imgWidth/32.0); 
-   dim3 gridSize(reqBlocksInX,reqBlocksInY,1);
+   dim3 gridSize(reqBlocksInY,reqBlocksInX,1);
  
    /* Transfering data to device */
    cudaState = cudaMemcpy(d_rawImage,h_rawImage,reqMemForRawImg,cudaMemcpyHostToDevice);
