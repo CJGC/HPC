@@ -23,24 +23,25 @@ __device__ uchar clamp(int value){
 }
 
 __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char *mask){
-    uint row = blockIdx.y*blockDim.y+threadIdx.y;
-    uint col = blockIdx.x*blockDim.x+threadIdx.x;
+    uint by = blockIdx.y, bx = blockIdx.x;
+    uint ty = threadIdx.y, tx = threadIdx.x;
+    uint row = by*blockWidth+ty, col = bx*blockWidth+tx;
     uint maskWidth = sizeof(mask)/sizeof(char)*2;
     int Pvalue = 0;
-    int stPointRow = row - (maskWidth/2); //start point with respect mask
-    int stPointCol = col - (maskWidth/2); //start point with respect mask
+    int stPointRow = ty - (maskWidth/2); //start point with respect mask
+    int stPointCol = tx - (maskWidth/2); //start point with respect mask
 
     if(row < height && col < width){
       __shared__ uchar imageS[blockWidth][blockWidth];
-      imageS[col][row] = image[row*width + col];
+      imageS[ty][tx] = image[row*width + col];
       __syncthreads();
 
       for(int i=0; i<maskWidth; i++)
           for(int j=0; j<maskWidth; j++ ){
               int startI = stPointRow + i;
               int startJ = stPointCol + j;
-              if((startJ >=0 && startJ < width) && (startI >=0 && startI < height))
-                  Pvalue += image[(startI*width) + startJ] * mask[i*maskWidth+j];
+              if((startJ >=0 && startJ < blockWidth) && (startI >=0 && startI < blockWidth))
+                  Pvalue += imageS[(startI*blockWidth) + startJ] * mask[i*maskWidth+j];
           }
 
       resImage[row*width+col] = clamp(Pvalue);
