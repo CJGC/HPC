@@ -32,8 +32,8 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char 
     int stPointCol = tx - (maskWidth/2); //start point with respect mask
 
     if(row < height && col < width){
-      __shared__ uchar imageS[blockWidth][blockWidth];
-      imageS[ty][tx] = image[row*width + col];
+      __shared__ uchar imageS[blockWidth*blockWidth];
+      imageS[ty*blockWidth + tx] = image[row*width + col];
       __syncthreads();
 
       for(int i=0; i<maskWidth; i++)
