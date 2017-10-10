@@ -15,9 +15,10 @@ __host__ void checkCudaState(cudaError_t& cudaState,const char *message){
    if(cudaState != cudaSuccess) printf("%s",message);
 }
 
-__device__ uchar clamp(uchar value){
+__device__ uchar clamp(int value){
     if(value < 0) return 0;
     if(value > 255) return 255;
+    return (uchar)value;
 }
 
 __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char *mask){
@@ -33,7 +34,7 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char 
             int startI = stPointRow + i;
             int startJ = stPointCol + j;
             if((startJ >=0 && startJ < width) && (startI >=0 && startI < height))
-                Pvalue += image[(startI*width) + startJ] * M[i*maskWidth+j];
+                Pvalue += image[(startI*width) + startJ] * mask[i*maskWidth+j];
         }
 
     resImage[row*width+col] = clamp(Pvalue);
