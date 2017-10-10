@@ -7,6 +7,7 @@
 #define GREEN 1
 #define BLUE 0
 #define chanDepth 3
+#define blockWidth 32
 
 using namespace cv;
 
@@ -29,15 +30,21 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char 
     int stPointRow = row - (maskWidth/2); //start point with respect mask
     int stPointCol = col - (maskWidth/2); //start point with respect mask
 
-    for(int i=0; i<maskWidth; i++)
-        for(int j=0; j<maskWidth; j++ ){
-            int startI = stPointRow + i;
-            int startJ = stPointCol + j;
-            if((startJ >=0 && startJ < width) && (startI >=0 && startI < height))
-                Pvalue += image[(startI*width) + startJ] * mask[i*maskWidth+j];
-        }
+    if(row < height && col < width){
+      __shared__ uchar imageS[blockWidth][blockWidth];
+      imageS[col][row] = image[row*width + col];
+      __syncthreads();
 
-    resImage[row*width+col] = clamp(Pvalue);
+      for(int i=0; i<maskWidth; i++)
+          for(int j=0; j<maskWidth; j++ ){
+              int startI = stPointRow + i;
+              int startJ = stPointCol + j;
+              if((startJ >=0 && startJ < width) && (startI >=0 && startI < height))
+                  Pvalue += image[(startI*width) + startJ] * mask[i*maskWidth+j];
+          }
+
+      resImage[row*width+col] = clamp(Pvalue);
+    }
 }
 
 __global__ void grayScale(uchar *image,uchar *resImage,int rows,int cols){
