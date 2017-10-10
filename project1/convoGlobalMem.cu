@@ -103,7 +103,7 @@ int main(int argc, char** argv ){
      /* Transfering and processing data to obtain sobel image */
      cudaState = cudaMemcpy(d_mask,h_mask,maskSize,cudaMemcpyHostToDevice);
      checkCudaState(cudaState,"Impossible copy data from mask to d_mask\n");
-     sobeFilt<<<gridSize,blockSize>>>(d_grayScale,d_sobelImage,imgHeight,imgWidth,d_mask);
+     sobeFilt<<<gridSize,blockSize>>>(d_grayScale,d_sobelImage,imgWidth,imgHeight,d_mask);
      cudaDeviceSynchronize();
 
      /* Recovering data of grayScale image to h_grayScale */
