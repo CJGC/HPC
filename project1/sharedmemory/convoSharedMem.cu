@@ -10,7 +10,7 @@
 #define blockWidth 32
 #define maskWidth 3
 
-__constant__char d_mask[maskWidth*maskWidth];
+__constant__ char d_mask[maskWidth*maskWidth];
 using namespace cv;
 
 __host__ void checkCudaState(cudaError_t& cudaState,const char *message){
@@ -26,11 +26,11 @@ __device__ uchar clamp(int value){
 
 __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
 	uint image_sWidth = blockWidth+maskWidth-1;
-	__shared__ uchar image_s[image_sWidth][image_sWidth];
+	__shared__ uchar image_s[blockWidth+maskWidth-1][blockWidth+maskWidth-1];
 	uint by = blockIdx.y, bx = blockIdx.x;
 	uint ty = threadIdx.y, tx = threadIdx.x;
 	uint n = maskWidth/2;
-	uint dest = ty*blockWidth+ tx,\
+	int dest = ty*blockWidth+ tx,\
 		destY = dest / image_sWidth, \
 		destX = dest % image_sWidth, \
 		srcY = by * blockWidth + destY - n, \
@@ -46,13 +46,14 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
     srcX = bx * blockWidth + destX - n;
     src = srcY * width + srcX;
 
-	if(destY < image_sWidth)
-		if (srcY >= 0 && srcY < height && srcX >= 0 && srcX < width) image_s[destY][destX] = imageInput[src];
+	if(destY < image_sWidth){
+		if (srcY >= 0 && srcY < height && srcX >= 0 && srcX < width) image_s[destY][destX] = image[src];
 		else image_s[destY][destX] = 0;
+   }
 	__syncthreads();
 
 
-	int Pvalue = 0,
+	int Pvalue = 0;
 	uint row, col;
 	for(row = 0; row < maskWidth; row++)
 		for(col = 0; col < maskWidth; col++)
