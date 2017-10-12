@@ -24,27 +24,26 @@ __device__ uchar clamp(int value){
 	return (uchar)value;
 }
 
+__device__ void setCoords(int w,uint by,uint bx,int& d,int& dY,int& dX,int& s,int& sY,int& sX,uint iSw){
+  uint n = maskWidth/2;
+  dY = d / iSw;
+  dX = d % iSw;
+  sY = by * blockWidth + dY - n;
+  sX = bx * blockWidth + dX - n;
+  s = sY * w + sX;
+}
+
 __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
 	uint image_sWidth = blockWidth+maskWidth-1;
 	__shared__ uchar image_s[blockWidth+maskWidth-1][blockWidth+maskWidth-1];
 	uint by = blockIdx.y, bx = blockIdx.x;
 	uint ty = threadIdx.y, tx = threadIdx.x;
-	uint n = maskWidth/2;
-	int dest = ty*blockWidth+ tx,\
-		destY = dest / image_sWidth, \
-		destX = dest % image_sWidth, \
-		srcY = by * blockWidth + destY - n, \
-		srcX = bx * blockWidth + destX - n, \
-		src = srcY * width + srcX;
+	int dest = ty*blockWidth+ tx,	destY, destX, srcY,	srcX, src;
+  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth);
 	if (srcY >= 0 && srcY < height && srcX >= 0 && srcX < width) image_s[destY][destX] = image[src];
 	else image_s[destY][destX] = 0;
-
-    dest +=  blockWidth*blockWidth;
-    destY = dest / image_sWidth;
-    destX = dest % image_sWidth;
-    srcY = by * blockWidth + destY - n;
-    srcX = bx * blockWidth + destX - n;
-    src = srcY * width + srcX;
+  dest +=  blockWidth*blockWidth;
+  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth);
 
 	if(destY < image_sWidth){
 		if (srcY >= 0 && srcY < height && srcX >= 0 && srcX < width) image_s[destY][destX] = image[src];
@@ -58,7 +57,7 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
 	for(row = 0; row < maskWidth; row++)
 		for(col = 0; col < maskWidth; col++)
 			Pvalue += image_s[ty + row][tx + col] * d_mask[row * maskWidth + col];
-	
+
 	row = by*blockWidth + ty;
 	col = bx*blockWidth + tx;
 
