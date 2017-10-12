@@ -9,6 +9,7 @@
 #define BLUE 0
 #define chanDepth 3
 #define blockWidth 32
+#define maskWidth 3
 
 using namespace cv;
 
@@ -23,8 +24,8 @@ __device__ uchar clamp(int value){
 	return (uchar)value;
 }
 
-__device__ void setCoords(int w,uint by,uint bx,int& d,int& dY,int& dX,int& s,int& sY,int& sX,uint iSw,uint& mW){
-  uint n = mW/2;
+__device__ void setCoords(int w,uint by,uint bx,int& d,int& dY,int& dX,int& s,int& sY,int& sX,uint iSw){
+  uint n = maskWidth/2;
   dY = d / iSw;
   dX = d % iSw;
   sY = by * blockWidth + dY - n;
@@ -33,17 +34,17 @@ __device__ void setCoords(int w,uint by,uint bx,int& d,int& dY,int& dX,int& s,in
 }
 
 __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char* mask){
-  uint maskWidth = 3; //sqrt((double)sizeof(mask)/sizeof(char));
+  //uint maskWidth = 3; //sqrt((double)sizeof(mask)/sizeof(char));
 	uint image_sWidth = blockWidth+maskWidth-1;
 	__shared__ uchar image_s[blockWidth+maskWidth-1][blockWidth+maskWidth-1];
 	uint by = blockIdx.y, bx = blockIdx.x;
 	uint ty = threadIdx.y, tx = threadIdx.x;
 	int dest = ty*blockWidth+ tx,	destY, destX, srcY,	srcX, src;
-  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth,maskWidth);
+  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth);
 	if (srcY >= 0 && srcY < height && srcX >= 0 && srcX < width) image_s[destY][destX] = image[src];
 	else image_s[destY][destX] = 0;
   dest +=  blockWidth*blockWidth;
-  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth,maskWidth);
+  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth);
 
 	if(destY < image_sWidth){
 		if (srcY >= 0 && srcY < height && srcX >= 0 && srcX < width) image_s[destY][destX] = image[src];
