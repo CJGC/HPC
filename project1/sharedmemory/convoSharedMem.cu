@@ -9,9 +9,7 @@
 #define BLUE 0
 #define chanDepth 3
 #define blockWidth 32
-#define maskWidth 3
 
-__constant__ char d_mask[maskWidth*maskWidth];
 using namespace cv;
 
 __host__ void checkCudaState(cudaError_t& cudaState,const char *message){
@@ -25,8 +23,8 @@ __device__ uchar clamp(int value){
 	return (uchar)value;
 }
 
-__device__ void setCoords(int w,uint by,uint bx,int& d,int& dY,int& dX,int& s,int& sY,int& sX,uint iSw){
-  uint n = maskWidth/2;
+__device__ void setCoords(int w,uint by,uint bx,int& d,int& dY,int& dX,int& s,int& sY,int& sX,uint iSw,uint& mW){
+  uint n = mW/2;
   dY = d / iSw;
   dX = d % iSw;
   sY = by * blockWidth + dY - n;
@@ -34,17 +32,18 @@ __device__ void setCoords(int w,uint by,uint bx,int& d,int& dY,int& dX,int& s,in
   s = sY * w + sX;
 }
 
-__global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
+__global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char* mask){
+  uint maskWidth = 3; //sqrt((double)sizeof(mask)/sizeof(char));
 	uint image_sWidth = blockWidth+maskWidth-1;
 	__shared__ uchar image_s[blockWidth+maskWidth-1][blockWidth+maskWidth-1];
 	uint by = blockIdx.y, bx = blockIdx.x;
 	uint ty = threadIdx.y, tx = threadIdx.x;
 	int dest = ty*blockWidth+ tx,	destY, destX, srcY,	srcX, src;
-  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth);
+  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth,maskWidth);
 	if (srcY >= 0 && srcY < height && srcX >= 0 && srcX < width) image_s[destY][destX] = image[src];
 	else image_s[destY][destX] = 0;
   dest +=  blockWidth*blockWidth;
-  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth);
+  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth,maskWidth);
 
 	if(destY < image_sWidth){
 		if (srcY >= 0 && srcY < height && srcX >= 0 && srcX < width) image_s[destY][destX] = image[src];
@@ -57,7 +56,7 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
 	uint row, col;
 	for(row = 0; row < maskWidth; row++)
 		for(col = 0; col < maskWidth; col++)
-			Pvalue += image_s[ty + row][tx + col] * d_mask[row * maskWidth + col];
+			Pvalue += image_s[ty + row][tx + col] * mask[row * maskWidth + col];
 
 	row = by*blockWidth + ty;
 	col = bx*blockWidth + tx;
@@ -103,7 +102,7 @@ int main(int argc, char** argv ){
      int reqMemForProcImg = imgHeight*imgWidth*sizeof(uchar);
      uchar *h_rawImage = NULL, *h_grayScale = NULL, *h_sobelImage = NULL;
      uchar *d_rawImage = NULL, *d_grayScale = NULL, *d_sobelImage = NULL;
-     char h_mask[] = {-1,0,1,-2,0,2,-1,0,1};
+     char h_mask[] = {-1,0,1,-2,0,2,-1,0,1}, *d_mask = NULL;
      uint maskSize = sizeof(h_mask);
 
      h_grayScale = (uchar *)malloc(reqMemForProcImg);
@@ -115,8 +114,10 @@ int main(int argc, char** argv ){
      checkCudaState(cudaState,"Unallocated memory for d_grayScale\n");
      cudaState = cudaMalloc((void**)&d_sobelImage,reqMemForProcImg);
      checkCudaState(cudaState,"Unallocated memory for d_sobelImage\n");
+     cudaState = cudaMalloc((void**)&d_mask,maskSize);
+     checkCudaState(cudaState,"Unallocated memory for d_mask\n");
 
-     if(d_rawImage != NULL && d_grayScale != NULL && d_sobelImage != NULL){
+     if(d_rawImage != NULL && d_grayScale != NULL && d_sobelImage != NULL && d_mask != NULL){
   	 /* Setting kernel properties */
   	 h_rawImage = image.data;
   	 dim3 blockSize(32,32,1);
@@ -131,9 +132,9 @@ int main(int argc, char** argv ){
   	 grayScale<<<gridSize,blockSize>>>(d_rawImage,d_grayScale,imgHeight,imgWidth);
   	 cudaDeviceSynchronize();
   	 /* Transfering and processing data to obtain sobel image */
-  	 cudaState = cudaMemcpyToSymbol(d_mask,h_mask,maskSize);
-  	 checkCudaState(cudaState,"Impossible copy data from mask to d_mask\n");
-  	 sobeFilt<<<gridSize,blockSize>>>(d_grayScale,d_sobelImage,imgWidth,imgHeight);
+  	 cudaState = cudaMemcpy(d_mask,h_mask,maskSize,cudaMemcpyHostToDevice);
+  	 checkCudaState(cudaState,"Impossible copy data from h_mask to d_mask\n");
+  	 sobeFilt<<<gridSize,blockSize>>>(d_grayScale,d_sobelImage,imgWidth,imgHeight,d_mask);
   	 cudaDeviceSynchronize();
 
   	 /* Recovering data of grayScale image to h_grayScale */
@@ -160,7 +161,7 @@ int main(int argc, char** argv ){
      if(d_rawImage != NULL) cudaFree(d_rawImage);
      if(d_grayScale != NULL) cudaFree(d_grayScale);
      if(d_sobelImage != NULL) cudaFree(d_sobelImage);
-
+     if(d_mask != NULL) cudaFree(d_mask);
      /* Freeing host's memory */
      // h_rawImage is a pointer to Mat's buffer, when Mat's buffer is  destroyed
      // memory is freed
