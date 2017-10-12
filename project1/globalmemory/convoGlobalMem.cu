@@ -25,7 +25,7 @@ __device__ uchar clamp(int value){
 __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char *mask){
     uint row = blockIdx.y*blockDim.y+threadIdx.y;
     uint col = blockIdx.x*blockDim.x+threadIdx.x;
-    uint maskWidth = sizeof(mask)/sizeof(char)*2;
+    uint maskWidth = 3;//sqrt((double)sizeof(mask)/sizeof(char));
     int Pvalue = 0;
     int stPointRow = row - (maskWidth/2); //start point with respect mask
     int stPointCol = col - (maskWidth/2); //start point with respect mask
