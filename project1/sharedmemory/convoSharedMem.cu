@@ -92,8 +92,10 @@ int main(int argc, char** argv ){
 	  return -1;
    }
    int cases = atoi(argv[2]);
-
+   FILE *data= fopen("data.txt","w+");
    do{
+     clock_t start, end;
+     double usedTime = 0.0;
      /* Memory data management */
      Size imgSize = image.size();
      int imgHeight = imgSize.height, imgWidth = imgSize.width;
@@ -122,6 +124,7 @@ int main(int argc, char** argv ){
   	 int reqBlocksInY = ceil((double)imgWidth/32.0);
   	 dim3 gridSize(reqBlocksInY,reqBlocksInX,1);
 
+     start = clock();
   	 /* Transfering and processing data to obtain grayimage */
   	 cudaState = cudaMemcpy(d_rawImage,h_rawImage,reqMemForRawImg,cudaMemcpyHostToDevice);
   	 checkCudaState(cudaState,"Impossible copy data from h_rawImage to d_rawImage\n");
@@ -139,6 +142,9 @@ int main(int argc, char** argv ){
   	 /* Recovering data of sobelImage to h_sobelImage */
   	 cudaState = cudaMemcpy(h_sobelImage,d_sobelImage,reqMemForProcImg,cudaMemcpyDeviceToHost);
   	 checkCudaState(cudaState,"Impossible copy data from d_sobelImage to h_sobelImage\n");
+     end = clock();
+     usedTime = ((double)(end - start))/ CLOCKS_PER_SEC;
+     fprintf(data,"%f\n",usedTime);
 
   	 /* Saving Image */
   	 Mat grayscaleImage, sobelImage;
@@ -162,4 +168,5 @@ int main(int argc, char** argv ){
      if(h_sobelImage != NULL) free(h_sobelImage);
      cases--;
    }while(cases > 0);
+   fclose(data);
 }
