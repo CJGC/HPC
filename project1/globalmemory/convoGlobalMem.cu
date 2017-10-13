@@ -132,7 +132,7 @@ int main(int argc, char** argv ){
        checkCudaState(cudaState,"Impossible copy data from d_sobelImage to h_sobelImage\n");
        end = clock();
        usedTime = ((double)(end - start))/ CLOCKS_PER_SEC;
-       fprintf(data,"%f,",usedTime);
+       fprintf(data,"%f\n",usedTime);
 
        /* Saving Images */
        Mat grayscaleImage, sobelImage;
