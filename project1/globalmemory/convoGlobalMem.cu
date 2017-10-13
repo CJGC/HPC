@@ -30,16 +30,18 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char 
     int stPointRow = row - (maskWidth/2); //start point with respect mask
     int stPointCol = col - (maskWidth/2); //start point with respect mask
 
-    for(int i=0; i<maskWidth; i++){
-        int iMask = stPointRow + i;
-        for(int j=0; j<maskWidth; j++){
-            int jMask = stPointCol + j;
-            if((iMask >=0 && iMask < height)&&(jMask >=0 && jMask < width))
-                Pvalue += image[(iMask*width) + jMask] * mask[i*maskWidth+j];
-        }
-    }
+    if(row < height && col < width){
+      for(int i=0; i<maskWidth; i++){
+          int iMask = stPointRow + i;
+          for(int j=0; j<maskWidth; j++){
+              int jMask = stPointCol + j;
+              if((iMask >=0 && iMask < height)&&(jMask >=0 && jMask < width))
+                  Pvalue += image[(iMask*width) + jMask] * mask[i*maskWidth+j];
+          }
+      }
 
-    resImage[row*width+col] = clamp(Pvalue);
+      resImage[row*width+col] = clamp(Pvalue);
+    }
 }
 
 __global__ void grayScale(uchar *image,uchar *resImage,int rows,int cols){
