@@ -64,9 +64,10 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char*
 	row = by*blockWidth + ty;
 	col = bx*blockWidth + tx;
 
-	if(row < height && col < width)
+	if(row < height && col < width){
     int Pvalue = sqrt((double)(PvalueY*PvalueY) + (double)(PvalueX*PvalueX));
-		resImage[row * width + col] = clamp(Pvalue);
+	 resImage[row * width + col] = clamp(Pvalue);
+   }
 	__syncthreads();
 }
 
