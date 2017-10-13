@@ -37,7 +37,7 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height,char*
           for(int j=0; j<maskWidth; j++){
               int jMask = stPointCol + j;
               if((iMask >=0 && iMask < height)&&(jMask >=0 && jMask < width)){
-                  PvalueY += image[iMask*width + jMask] * mask_x[i*maskWidth+j]
+                  PvalueY += image[iMask*width + jMask] * mask_x[i*maskWidth+j];
                   PvalueX += image[iMask*width + jMask] * mask_y[i*maskWidth+j];
               }
           }
@@ -84,7 +84,7 @@ int main(int argc, char** argv ){
      int reqMemForProcImg = imgHeight*imgWidth*sizeof(uchar);
      uchar *h_rawImage = NULL, *h_grayScale = NULL, *h_sobelImage = NULL;
      uchar *d_rawImage = NULL, *d_grayScale = NULL, *d_sobelImage = NULL;
-     char h_mask_y = {-1,-2,-1,0,0,0,1,2,1}, h_mask_x[] = {-1,0,1,-2,0,2,-1,0,1};
+     char h_mask_y[] = {-1,-2,-1,0,0,0,1,2,1}, h_mask_x[] = {-1,0,1,-2,0,2,-1,0,1};
      char *d_mask_y=NULL, *d_mask_x=NULL;
      uint maskSize_y = sizeof(h_mask_y);
      uint maskSize_x = sizeof(h_mask_x);
@@ -161,7 +161,7 @@ int main(int argc, char** argv ){
      if(d_grayScale != NULL) cudaFree(d_grayScale);
      if(d_sobelImage != NULL) cudaFree(d_sobelImage);
      if(d_mask_x != NULL) cudaFree(d_mask_x);
-     if(d_mask_y != NULL) cudaFree(d_mask_y)
+     if(d_mask_y != NULL) cudaFree(d_mask_y);
 
      /* Freeing host's memory */
      // h_rawImage is a pointer to Mat's buffer, when Mat's buffer is  destroyed
