@@ -58,15 +58,15 @@ __global__ void grayScale(uchar *image,uchar *resImage,int rows,int cols){
    }
 }
 
-__host__ void getNames(char* argv,char* imgN,char* grayName,char* sobName,char*grayNameHost,char*sobNameHost,char* fileName){
+__host__ void getNames(char* argv,char* imgN,char* gray,char* sob,char* grayHost,char* sobHost,char* fileName){
   char *name = strtok(argv,"/."), format[11] = {" data.txt"};
-  char grayscaleName[16] = {" grayscale.jpg"}, sobelName[12] = {" sobel.jpg"};
-  char grayscaleNameHost[22]= {" opencv grayscale.jpg"}, sobelNameHost[19] = {" opencv sobel.jpg"};
+  char grayscale[16] = {" grayscale.jpg"}, sobel[12] = {" sobel.jpg"};
+  char grayscaleHost[22]= {" opencv grayscale.jpg"}, sobelHost[19] = {" opencv sobel.jpg"};
   name = strtok(NULL,"/.");
-  strcpy(imgN,name); strcpy(fileName,name);  strcpy(grayName,name);  strcpy(sobName,name);
-  strcpy(grayNameHost,name); strcpy(sobNameHost,name);
-  strcat(grayName,grayscaleName); strcat(sobName,sobelName);
-  strcat(grayNameHost,grayscaleNameHost); strcat(sobNameHost,sobelNameHost); strcat(fileName,format);
+  strcpy(imgN,name); strcpy(fileName,name);  strcpy(gray,name);  strcpy(sob,name);
+  strcpy(grayHost,name); strcpy(sobHost,name);
+  strcat(gray,grayscale); strcat(sob,sobel);
+  strcat(grayHost,grayscaleHost); strcat(sobHost,sobelHost); strcat(fileName,format);
 }
 
 int main(int argc, char** argv ){
@@ -87,9 +87,9 @@ int main(int argc, char** argv ){
    Size imgSize = image.size();
    int imgHeight = imgSize.height, imgWidth = imgSize.width;
    int cases = atoi(argv[2]);
-   char fileName[30], imgName[30], grayscaleName[60], sobelName[60];
-   char grayscaleNameHost[60], sobelNameHost[60];
-   getNames(argv[1],imgName,grayscaleName,sobelName,grayscaleNameHost,sobelNameHost,fileName);
+   char fileName[30], imgName[30], grayscale[60], sobel[60];
+   char grayscaleHost[60], sobelHost[60];
+   getNames(argv[1],imgName,grayscale,sobel,grayscaleHost,sobelHost,fileName);
    FILE *data= fopen(fileName,"w+");
    fprintf(data,"%s\n","GPU VS CPU");
    fprintf(data,"img name = %s,img size = %d x %d\n",imgName,imgHeight,imgWidth);
@@ -162,8 +162,8 @@ int main(int argc, char** argv ){
        end = clock();
        usedTime = ((double)(end - start))/ CLOCKS_PER_SEC;
        fprintf(data,"%f\n",usedTime);
-       imwrite(grayscaleNameHost,grayscale_opencv);
-       imwrite(sobelNameHost,abs_gradient_x);
+       imwrite(grayscaleHost,grayscale_opencv);
+       imwrite(sobelHost,abs_gradient_x);
 
        /* Saving Images */
        Mat grayscaleImage, sobelImage;
@@ -171,8 +171,8 @@ int main(int argc, char** argv ){
        sobelImage.create(imgHeight,imgWidth,CV_8UC1);
        grayscaleImage.data = h_grayScale;
        sobelImage.data = h_sobelImage;
-       imwrite(grayscaleName,grayscaleImage);
-    	 imwrite(sobelName,sobelImage);
+       imwrite(grayscale,grayscaleImage);
+    	 imwrite(sobel,sobelImage);
      }
 
      /* Freeing device's memory */

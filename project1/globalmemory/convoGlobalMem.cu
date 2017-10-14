@@ -58,12 +58,12 @@ __global__ void grayScale(uchar *image,uchar *resImage,int rows,int cols){
    }
 }
 
-__host__ void getNames(char* argv,char* imgN,char* grayName,char* sobName,char* fileName){
+__host__ void getNames(char* argv,char* imgN,char* gray,char* sob,char* fileName){
   char *name = strtok(argv,"/."), format[11] = {" data.txt"};
-  char grayscaleName[16] = {" grayscale.jpg"}, sobelName[12] = {" sobel.jpg"};
+  char grayscale[16] = {" grayscale.jpg"}, sobel[12] = {" sobel.jpg"};
   name = strtok(NULL,"/.");
-  strcpy(imgN,name); strcpy(fileName,name);  strcpy(grayName,name);  strcpy(sobName,name);
-  strcat(grayName,grayscaleName); strcat(sobName,sobelName); strcat(fileName,format);
+  strcpy(imgN,name); strcpy(fileName,name);  strcpy(gray,name);  strcpy(sob,name);
+  strcat(gray,grayscale); strcat(sob,sobel); strcat(fileName,format);
 }
 
 int main(int argc, char** argv ){
@@ -84,8 +84,8 @@ int main(int argc, char** argv ){
    Size imgSize = image.size();
    int imgHeight = imgSize.height, imgWidth = imgSize.width;
    int cases = atoi(argv[2]);
-   char fileName[30], imgName[30], grayscaleName[60], sobelName[60];
-   getNames(argv[1],imgName,grayscaleName,sobelName,fileName);
+   char fileName[30], imgName[30], grayscale[60], sobel[60];
+   getNames(argv[1],imgName,grayscale,sobel,fileName);
    FILE *data= fopen(fileName,"w+");
    fprintf(data,"img name = %s,img size = %d x %d\n",imgName,imgHeight,imgWidth);
    fprintf(data,"%s\n","Using global memory");
@@ -155,8 +155,8 @@ int main(int argc, char** argv ){
        sobelImage.create(imgHeight,imgWidth,CV_8UC1);
        grayscaleImage.data = h_grayScale;
        sobelImage.data = h_sobelImage;
-       imwrite(grayscaleName,grayscaleImage);
-    	 imwrite(sobelName,sobelImage);
+       imwrite(grayscale,grayscaleImage);
+    	 imwrite(sobel,sobelImage);
      }
 
      /* Freeing device's memory */
