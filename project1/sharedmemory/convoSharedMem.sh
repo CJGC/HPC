@@ -11,4 +11,13 @@ export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64/${LD_LIBRARY_PATH:+:${LD_LIBRAR
 
 export CUDA_VISIBLE_DEVICES=0
 
+./convoSharedMem ../images/butterfly.jpg 10
 ./convoSharedMem ../images/car.jpg 10
+./convoSharedMem ../images/cat.jpg 10
+./convoSharedMem ../images/city.jpg 10
+./convoSharedMem ../images/control.jpg 10
+./convoSharedMem ../images/lizard.jpg 10
+./convoSharedMem ../images/paisaje.jpg 10
+./convoSharedMem ../images/planet.jpg 10
+./convoSharedMem ../images/thunder.jpg 10
+./convoSharedMem ../images/wood.jpg 10
