@@ -11,7 +11,8 @@
 #define blockWidth 32
 #define maskWidth 3
 
-__constant__ char d_mask[maskWidth*maskWidth];
+__constant__ char d_mask_x[maskWidth*maskWidth];
+__constant__ char d_mask_y[maskWidth*maskWidth];
 using namespace cv;
 
 __host__ void checkCudaState(cudaError_t& cudaState,const char *message){
@@ -53,17 +54,21 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
 	__syncthreads();
 
 
-	int Pvalue = 0;
+	int PvalueY = 0, PvalueX = 0, Pvalue = 0;
 	uint row, col;
 	for(row = 0; row < maskWidth; row++)
-		for(col = 0; col < maskWidth; col++)
-			Pvalue += image_s[ty + row][tx + col] * d_mask[row * maskWidth + col];
+		for(col = 0; col < maskWidth; col++){
+      PvalueY += image_s[ty + row][tx + col] * d_mask_y[row * maskWidth + col];
+			PvalueX += image_s[ty + row][tx + col] * d_mask_x[row * maskWidth + col];
+    }
 
 	row = by*blockWidth + ty;
 	col = bx*blockWidth + tx;
 
-	if(row < height && col < width)
+	if(row < height && col < width){
+    Pvalue = sqrt((double)(PvalueY*PvalueY) + (double)(PvalueX*PvalueX));
 		resImage[row * width + col] = clamp(Pvalue);
+  }
 	__syncthreads();
 }
 
@@ -103,8 +108,9 @@ int main(int argc, char** argv ){
      int reqMemForProcImg = imgHeight*imgWidth*sizeof(uchar);
      uchar *h_rawImage = NULL, *h_grayScale = NULL, *h_sobelImage = NULL;
      uchar *d_rawImage = NULL, *d_grayScale = NULL, *d_sobelImage = NULL;
-     char h_mask[] = {-1,0,1,-2,0,2,-1,0,1};
-     uint maskSize = sizeof(h_mask);
+     char h_mask_y[] = {-1,-2,-1,0,0,0,1,2,1}, h_mask_x[] = {-1,0,1,-2,0,2,-1,0,1};
+     uint maskSizeY = sizeof(h_mask_y);
+     uint maskSizeX = sizeof(h_mask_x);
 
      h_grayScale = (uchar *)malloc(reqMemForProcImg);
      h_sobelImage = (uchar *)malloc(reqMemForProcImg);
@@ -131,8 +137,10 @@ int main(int argc, char** argv ){
   	 grayScale<<<gridSize,blockSize>>>(d_rawImage,d_grayScale,imgHeight,imgWidth);
   	 cudaDeviceSynchronize();
   	 /* Transfering and processing data to obtain sobel image */
-  	 cudaState = cudaMemcpyToSymbol(d_mask,h_mask,maskSize);
-  	 checkCudaState(cudaState,"Impossible copy data from mask to d_mask\n");
+     cudaState = cudaMemcpyToSymbol(d_mask_y,h_mask_y,maskSizeY);
+     checkCudaState(cudaState,"Impossible copy data from h_mask_y to d_mask_y\n");
+  	 cudaState = cudaMemcpyToSymbol(d_mask_x,h_mask_x,maskSizeX);
+  	 checkCudaState(cudaState,"Impossible copy data from h_mask_x to d_mask_x\n");
   	 sobeFilt<<<gridSize,blockSize>>>(d_grayScale,d_sobelImage,imgWidth,imgHeight);
   	 cudaDeviceSynchronize();
 
