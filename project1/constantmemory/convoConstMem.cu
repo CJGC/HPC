@@ -22,12 +22,15 @@ __host__ void checkCudaState(cudaError_t& cudaState,const char *message){
 }
 
 __device__ uchar clamp(int value){
+  /* it will clamp a value if is not between 0 - 255 range */
   if(value < 0) return 0;
   if(value > 255) return 255;
   return (uchar)value;
 }
 
 __device__ void setCoords(int w,uint by,uint bx,int& d,int& dY,int& dX,int& s,int& sY,int& sX,uint iSw){
+  /* it will set up the needed coords to extract data from image
+     and put it into correspond shared memory section */
   uint n = maskWidth/2;
   dY = d / iSw;
   dX = d % iSw;
@@ -37,6 +40,7 @@ __device__ void setCoords(int w,uint by,uint bx,int& d,int& dY,int& dX,int& s,in
 }
 
 __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
+  /* it will do convolution between two sobel filter masks and the loaded image */
   uint image_sWidth = blockWidth+maskWidth-1;
   __shared__ uchar image_s[blockWidth+maskWidth-1][blockWidth+maskWidth-1];
   uint by = blockIdx.y, bx = blockIdx.x;
@@ -84,6 +88,7 @@ __global__ void grayScale(uchar *image,uchar *resImage,int rows,int cols){
 }
 
 __host__ void getNames(char* argv,char* imgN,char* gray,char* sob,char* fileName){
+  /* it will set up the needed output files names when processing an image */
   char *name = strtok(argv,"/."), format[11] = {" data.txt"};
   char grayscale[16] = {" grayscale.jpg"}, sobel[12] = {" sobel.jpg"};
   name = strtok(NULL,"/.");
