@@ -60,21 +60,18 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
 
 
   int PvalueY = 0, PvalueX = 0, Pvalue = 0;
-  uint row, col;
-  for(row = 0; row < maskWidth; row++)
-    for(col = 0; col < maskWidth; col++){
-      PvalueY += image_s[ty + row][tx + col] * d_mask_y[row * maskWidth + col];
-      PvalueX += image_s[ty + row][tx + col] * d_mask_x[row * maskWidth + col];
-    }
-
-  row = by*blockWidth + ty;
-  col = bx*blockWidth + tx;
-
+  uint row = by*blockWidth + ty;
+  uint col = bx*blockWidth + tx;
   if(row < height && col < width){
-    Pvalue = sqrt((double)(PvalueY*PvalueY) + (double)(PvalueX*PvalueX));
-    resImage[row * width + col] = clamp(Pvalue);
+    for(uint i = 0; i < maskWidth; i++)
+      for(uint j = 0; j < maskWidth; j++){
+        PvalueY += image_s[ty + i][tx + j] * d_mask_y[i * maskWidth + j];
+        PvalueX += image_s[ty + i][tx + j] * d_mask_x[i * maskWidth + j];
+      }
+
+      Pvalue = sqrt((double)(PvalueY*PvalueY) + (double)(PvalueX*PvalueX));
+      resImage[row * width + col] = clamp(Pvalue);
   }
-  __syncthreads();
 }
 
 __global__ void grayScale(uchar *image,uchar *resImage,int rows,int cols){
