@@ -51,8 +51,8 @@ __global__ void sobeFilt(uchar *image,uchar *resImage,int width,int height){
   else image_s[destY][destX] = 0;
 
   dest +=  blockWidth*blockWidth;
-  setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth);
-  if(destY < image_sWidth){
+  if(1024 <= dest && dest <= 1155){ 
+    setCoords(width,by,bx,dest,destY,destX,src,srcY,srcX,image_sWidth);
     if (srcY >= 0 && srcY < height && srcX >= 0 && srcX < width) image_s[destY][destX] = image[src];
     else image_s[destY][destX] = 0;
   }
