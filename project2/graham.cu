@@ -11,7 +11,7 @@ struct Point {
   int x, y;
 };
 
-__device__ int distSq(Point& p1, Point& p2){
+__device__ int distSq(Point p1, Point p2){
   /* A utility function to return square of distance between p1 and p2 */
   return (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y);
 }
@@ -21,7 +21,7 @@ __device__ int distSq(Point& p1, Point& p2){
 // 0 --> p, q and r are colinear
 // 1 --> Clockwise
 // 2 --> Counterclockwise
-__device__ int d_orientation(Point& p, Point& q, Point& r){
+__device__ int d_orientation(Point p, Point q, Point r){
   int val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 
   if (val == 0) return 0;  // colinear
@@ -30,7 +30,7 @@ __device__ int d_orientation(Point& p, Point& q, Point& r){
 
 // A function used by library function qsort() to sort an array of
 // points with respect to the first point
-__device__ int compare(Point& p0,Point& p1,Point& p2){
+__device__ int compare(Point p0,Point p1,Point p2){
   // Find orientation
   int o = d_orientation(p0, p1, p2);
   if(o == 0)
@@ -46,7 +46,7 @@ __device__ void swap(Point *points,uint lowIndex,uint upIndex){
   points[upIndex] = aux;
 }
 
-__global__ void sort(Point* points,uint phase,uint n,Point& p0){
+__global__ void sort(Point* points,uint phase,uint n,Point p0){
   /* it will sort with points array with respect to phase*/
   uint ti = blockIdx.x*blockDim.x+threadIdx.x;
   if(ti >= n || ti == 0) return;
@@ -62,7 +62,7 @@ __global__ void sort(Point* points,uint phase,uint n,Point& p0){
       if(lowG1 <= topG1 && lowG2 <= topG2){
         Point p1 = points[lowG1];
         Point p2 = points[lowG2];
-        if(compare(p0,p1,p2) == -1){
+        if(compare(p0,p1,p2) == 1){
           swap(points,lowG1,lowG2);
           lowG2++;
         }
@@ -75,7 +75,7 @@ __global__ void sort(Point* points,uint phase,uint n,Point& p0){
         uint next = lowG1 + 1;
         Point p1 = points[lowG1];
         Point p2 = points[next];
-        if(compare(p0,p1,p2) == -1)
+        if(compare(p0,p1,p2) == 1)
           swap(points,lowG1,next);
         lowG1++;
       }
@@ -85,7 +85,7 @@ __global__ void sort(Point* points,uint phase,uint n,Point& p0){
         uint next = lowG2 + 1;
         Point p1 = points[lowG2];
         Point p2 = points[next];
-        if(compare(p0,p1,p2) == -1)
+        if(compare(p0,p1,p2) == 1)
           swap(points,lowG2,next);
         lowG2++;
       }
@@ -237,14 +237,14 @@ int main() {
 
   if(h_points != NULL){
     h_points[0].x = 0; h_points[0].y = 3;
-    h_points[1].x = 1; h_points[0].y = 1;
-    h_points[2].x = 2; h_points[0].y = 2;
-    h_points[3].x = 4; h_points[0].y = 4;
-    h_points[4].x = 0; h_points[0].y = 0;
-    h_points[5].x = 1; h_points[0].y = 2;
-    h_points[6].x = 3; h_points[0].y = 1;
-    h_points[7].x = 3; h_points[0].y = 3;
-    h_points[8].x = 2; h_points[0].y = 1;
+    h_points[1].x = 1; h_points[1].y = 1;
+    h_points[2].x = 2; h_points[2].y = 2;
+    h_points[3].x = 4; h_points[3].y = 4;
+    h_points[4].x = 0; h_points[4].y = 0;
+    h_points[5].x = 1; h_points[5].y = 2;
+    h_points[6].x = 3; h_points[6].y = 1;
+    h_points[7].x = 3; h_points[7].y = 3;
+    h_points[8].x = 2; h_points[8].y = 1;
     convexHull(h_points, n);
   }
 
