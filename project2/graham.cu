@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <cuda.h>
-
 using namespace std;
 
 struct Point {
@@ -11,8 +10,10 @@ struct Point {
   int x, y;
 };
 
+__constant__ Point d_p0;
+
 __device__ int distSq(Point p1, Point p2){
-  /* A utility function to return square of distance between p1 and p2 */
+  /* it will return square of distance between p1 and p2 */
   return (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y);
 }
 
@@ -28,13 +29,11 @@ __device__ int d_orientation(Point p, Point q, Point r){
   return (val > 0)? 1: 2; // clock or counterclock wise
 }
 
-// A function used by library function qsort() to sort an array of
-// points with respect to the first point
-__device__ int compare(Point p0,Point p1,Point p2){
-  // Find orientation
-  int o = d_orientation(p0, p1, p2);
+__device__ int compare(Point p1,Point p2){
+  // Find orientation with respect to the first point
+  int o = d_orientation(d_p0, p1, p2);
   if(o == 0)
-    return (distSq(p0, p2) >= distSq(p0, p1))? -1 : 1;
+    return (distSq(d_p0, p2) >= distSq(d_p0, p1))? -1 : 1;
 
   return (o == 2)? -1: 1;
 }
@@ -46,7 +45,7 @@ __device__ void swap(Point *points,uint lowIndex,uint upIndex){
   points[upIndex] = aux;
 }
 
-__global__ void sort(Point* points,uint phase,uint n,Point p0){
+__global__ void sort(Point* points,uint phase,uint n){
   /* it will sort with points array with respect to phase*/
   uint ti = blockIdx.x*blockDim.x+threadIdx.x;
   if(ti >= n || ti == 0) return;
@@ -62,7 +61,7 @@ __global__ void sort(Point* points,uint phase,uint n,Point p0){
       if(lowG1 <= topG1 && lowG2 <= topG2){
         Point p1 = points[lowG1];
         Point p2 = points[lowG2];
-        if(compare(p0,p1,p2) == 1){
+        if(compare(d_p0,p1,p2) == 1){
           swap(points,lowG1,lowG2);
           lowG2++;
         }
@@ -75,7 +74,7 @@ __global__ void sort(Point* points,uint phase,uint n,Point p0){
         uint next = lowG1 + 1;
         Point p1 = points[lowG1];
         Point p2 = points[next];
-        if(compare(p0,p1,p2) == 1)
+        if(compare(d_p0,p1,p2) == 1)
           swap(points,lowG1,next);
         lowG1++;
       }
@@ -85,7 +84,7 @@ __global__ void sort(Point* points,uint phase,uint n,Point p0){
         uint next = lowG2 + 1;
         Point p1 = points[lowG2];
         Point p2 = points[next];
-        if(compare(p0,p1,p2) == 1)
+        if(compare(d_p0,p1,p2) == 1)
           swap(points,lowG2,next);
         lowG2++;
       }
@@ -159,12 +158,13 @@ __host__ void convexHull(Point *h_points, int n){
     // A point p1 comes before p2 in sorted ouput if p2
     // has larger polar angle (in counterclockwise
     // direction) than p1
-    Point p0;
-    p0 = h_points[0];
+
+    Point h_p0 = h_points[0];
+    cudaState = cudaMemcpyToSymbol(d_p0,h_p0,sizeof(Point));
+    checkCudaState(cudaState,"Impossible copy data from host to device\n");
 
     cudaState = cudaMemcpy(d_points,h_points,size,cudaMemcpyHostToDevice);
     checkCudaState(cudaState,"Impossible copy data from host to device\n");
-    //qsort(&points[1], n-1, sizeof(Point), compare);
     dim3 gridSize((int)(ceil(n/1024.0)),1,1);
     dim3 blockSize(1024,1,1);
     uint i = 1;
@@ -176,7 +176,7 @@ __host__ void convexHull(Point *h_points, int n){
 
     cudaState = cudaMemcpy(h_result,d_points,size,cudaMemcpyDeviceToHost);
     checkCudaState(cudaState,"Impossible copy data from device to host\n");
-    h_result[0] = p0;
+    h_result[0] = h_p0;
     // If two or more points make same angle with p0,
     // Remove all but the one that is farthest from p0
     // Remember that, in above sorting, our criteria was
@@ -186,7 +186,7 @@ __host__ void convexHull(Point *h_points, int n){
     for(int i=1; i<n; i++){
       // Keep removing i while angle of i and i+1 is same
       // with respect to p0
-      while(i < n-1 && h_orientation(p0,h_result[i],h_result[i+1]) == 0)
+      while(i < n-1 && h_orientation(h_p0,h_result[i],h_result[i+1]) == 0)
         i++;
 
       h_result[m] = h_result[i];
