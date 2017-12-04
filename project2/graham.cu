@@ -10,11 +10,11 @@ struct Point {
   int x, y;
 };
 
-__constant__ Point d_p0;
+__constant__ Point d_p0[1];
 
-__device__ int distSq(Point p1, Point p2){
+__device__ int distSq(Point p2){
   /* it will return square of distance between p1 and p2 */
-  return (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y);
+  return (d_p0[0].x - p2.x)*(d_p0[0].x - p2.x) + (d_p0[0].y - p2.y)*(d_p0[0].y - p2.y);
 }
 
 // To find orientation of ordered triplet (p, q, r).
@@ -22,18 +22,17 @@ __device__ int distSq(Point p1, Point p2){
 // 0 --> p, q and r are colinear
 // 1 --> Clockwise
 // 2 --> Counterclockwise
-__device__ int d_orientation(Point p, Point q, Point r){
-  int val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-
+__device__ int d_orientation(Point q, Point r){
+  int val = (q.y - d_p0[0].y) * (r.x - q.x) - (q.x - d_p0[0].x) * (r.y - q.y);
   if (val == 0) return 0;  // colinear
   return (val > 0)? 1: 2; // clock or counterclock wise
 }
 
 __device__ int compare(Point p1,Point p2){
   // Find orientation with respect to the first point
-  int o = d_orientation(d_p0, p1, p2);
+  int o = d_orientation(p1, p2);
   if(o == 0)
-    return (distSq(d_p0, p2) >= distSq(d_p0, p1))? -1 : 1;
+    return (distSq(p2) >= distSq(p1))? -1 : 1;
 
   return (o == 2)? -1: 1;
 }
@@ -61,7 +60,7 @@ __global__ void sort(Point* points,uint phase,uint n){
       if(lowG1 <= topG1 && lowG2 <= topG2){
         Point p1 = points[lowG1];
         Point p2 = points[lowG2];
-        if(compare(d_p0,p1,p2) == 1){
+        if(compare(p1,p2) == 1){
           swap(points,lowG1,lowG2);
           lowG2++;
         }
@@ -74,7 +73,7 @@ __global__ void sort(Point* points,uint phase,uint n){
         uint next = lowG1 + 1;
         Point p1 = points[lowG1];
         Point p2 = points[next];
-        if(compare(d_p0,p1,p2) == 1)
+        if(compare(p1,p2) == 1)
           swap(points,lowG1,next);
         lowG1++;
       }
@@ -84,7 +83,7 @@ __global__ void sort(Point* points,uint phase,uint n){
         uint next = lowG2 + 1;
         Point p1 = points[lowG2];
         Point p2 = points[next];
-        if(compare(d_p0,p1,p2) == 1)
+        if(compare(p1,p2) == 1)
           swap(points,lowG2,next);
         lowG2++;
       }
@@ -159,8 +158,7 @@ __host__ void convexHull(Point *h_points, int n){
     // has larger polar angle (in counterclockwise
     // direction) than p1
 
-    Point h_p0 = h_points[0];
-    cudaState = cudaMemcpyToSymbol(d_p0,h_p0,sizeof(Point));
+    cudaState = cudaMemcpyToSymbol(d_p0,h_points,sizeof(Point));
     checkCudaState(cudaState,"Impossible copy data from host to device\n");
 
     cudaState = cudaMemcpy(d_points,h_points,size,cudaMemcpyHostToDevice);
@@ -169,14 +167,14 @@ __host__ void convexHull(Point *h_points, int n){
     dim3 blockSize(1024,1,1);
     uint i = 1;
     while(pow(2,i) <= n){
-      sort<<<gridSize,blockSize>>>(d_points,pow(2,i),n,p0);
+      sort<<<gridSize,blockSize>>>(d_points,pow(2,i),n);
       cudaDeviceSynchronize();
       i++;
     }
 
     cudaState = cudaMemcpy(h_result,d_points,size,cudaMemcpyDeviceToHost);
     checkCudaState(cudaState,"Impossible copy data from device to host\n");
-    h_result[0] = h_p0;
+    h_result[0] = h_points[0];
     // If two or more points make same angle with p0,
     // Remove all but the one that is farthest from p0
     // Remember that, in above sorting, our criteria was
@@ -186,7 +184,7 @@ __host__ void convexHull(Point *h_points, int n){
     for(int i=1; i<n; i++){
       // Keep removing i while angle of i and i+1 is same
       // with respect to p0
-      while(i < n-1 && h_orientation(h_p0,h_result[i],h_result[i+1]) == 0)
+      while(i < n-1 && h_orientation(h_points[0],h_result[i],h_result[i+1]) == 0)
         i++;
 
       h_result[m] = h_result[i];
