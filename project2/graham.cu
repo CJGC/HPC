@@ -34,9 +34,9 @@ __device__ int d_orientation(Point p, Point q, Point r)
 
 __device__ int compare(Point p1,Point p2){
   // Find orientation with respect to the first point
-  int o = d_orientation(d_p0, p1, p2);
+  int o = d_orientation(d_p0[0], p1, p2);
   if(o == 0)
-    return (distSq(d_p0, p2) >= distSq(d_p0,p1))? -1 : 1;
+    return (distSq(d_p0[0], p2) >= distSq(d_p0[0],p1))? -1 : 1;
 
   return (o == 2)? -1: 1;
 }
