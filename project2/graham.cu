@@ -12,9 +12,10 @@ struct Point {
 
 __constant__ Point d_p0[1];
 
-__device__ int distSq(Point p2){
-  /* it will return square of distance between p1 and p2 */
-  return (d_p0[0].x - p2.x)*(d_p0[0].x - p2.x) + (d_p0[0].y - p2.y)*(d_p0[0].y - p2.y);
+__device__ int distSq(Point p1, Point p2)
+{
+    return (p1.x - p2.x)*(p1.x - p2.x) +
+          (p1.y - p2.y)*(p1.y - p2.y);
 }
 
 // To find orientation of ordered triplet (p, q, r).
@@ -22,17 +23,20 @@ __device__ int distSq(Point p2){
 // 0 --> p, q and r are colinear
 // 1 --> Clockwise
 // 2 --> Counterclockwise
-__device__ int d_orientation(Point q, Point r){
-  int val = (q.y - d_p0[0].y) * (r.x - q.x) - (q.x - d_p0[0].x) * (r.y - q.y);
-  if (val == 0) return 0;  // colinear
-  return (val > 0)? 1: 2; // clock or counterclock wise
+__device__ int d_orientation(Point p, Point q, Point r)
+{
+    int val = (q.y - p.y) * (r.x - q.x) -
+              (q.x - p.x) * (r.y - q.y);
+
+    if (val == 0) return 0;  // colinear
+    return (val > 0)? 1: 2; // clock or counterclock wise
 }
 
 __device__ int compare(Point p1,Point p2){
   // Find orientation with respect to the first point
-  int o = d_orientation(p1, p2);
+  int o = d_orientation(d_p0, p1, p2);
   if(o == 0)
-    return (distSq(p2) >= distSq(p1))? -1 : 1;
+    return (distSq(d_p0, p2) >= distSq(d_p0,p1))? -1 : 1;
 
   return (o == 2)? -1: 1;
 }
